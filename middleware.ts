@@ -67,6 +67,9 @@ export function middleware(req: NextRequest) {
   target.searchParams.set("path", url.pathname + url.search);
   target.searchParams.set("org", ORGANIZATION_ID);
   target.searchParams.set("ua", ua);
+  if (qsAgent) {
+    target.searchParams.set("user-agent", qsAgent);
+  }
 
   return NextResponse.rewrite(target, {
     headers: {
