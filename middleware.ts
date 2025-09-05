@@ -38,6 +38,9 @@ export function middleware(req: NextRequest) {
 
   // Log every request
   console.log(`📝 Request: ${req.method} ${req.nextUrl.pathname} | UA: ${ua.substring(0, 50)}... | Query Agent: ${qsAgent || 'none'}`);
+  
+  // Log all headers
+  console.log('📋 Headers:', Object.fromEntries(req.headers.entries()));
 
   if (!isAIVisitor(ua, qsAgent)) {
     return NextResponse.next();
