@@ -40,6 +40,9 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // Log warning for AI agent detection
+  console.warn(`🤖 AI Agent detected: ${ua} | Path: ${req.nextUrl.pathname} | Query Agent: ${qsAgent || 'none'}`);
+
   // Rewrite AI traffic to our Edge Route Handler
   const url = req.nextUrl.clone();
   const target = new URL(`/api/ai-proxy`, req.url);
