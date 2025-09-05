@@ -31,6 +31,11 @@ export function middleware(req: NextRequest) {
   const ua = req.headers.get("user-agent") || "";
   const qsAgent = req.nextUrl.searchParams.get("user-agent")?.toLowerCase() ?? null;
 
+  // Bypass middleware if requested (to prevent loops from ai-proxy)
+  if (req.headers.get("x-bypass-middleware") === "true") {
+    return NextResponse.next();
+  }
+
   // Prevent loops - exclude static assets and Next.js internals
   if (
     req.nextUrl.pathname.startsWith("/api/ai-proxy") ||

@@ -88,6 +88,7 @@ export async function GET(req: Request) {
       headers: {
         "user-agent": uaHeader || "",
         accept: req.headers.get("accept") || "*/*",
+        "x-bypass-middleware": "true", // Bypass middleware to prevent loops
       },
       redirect: "follow",
     });
@@ -125,7 +126,12 @@ export async function GET(req: Request) {
       headers,
     });
   } catch (e) {
-    const fallback = await fetch(`${currentOrigin}${path}`, { redirect: "follow" });
+    const fallback = await fetch(`${currentOrigin}${path}`, { 
+      headers: {
+        "x-bypass-middleware": "true", // Bypass middleware to prevent loops
+      },
+      redirect: "follow" 
+    });
     const headers = new Headers(fallback.headers);
     headers.set("Vary", headers.get("Vary") ? headers.get("Vary") + ", User-Agent" : "User-Agent");
     return new Response(fallback.body, {
