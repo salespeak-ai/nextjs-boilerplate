@@ -31,12 +31,19 @@ export function middleware(req: NextRequest) {
   const ua = req.headers.get("user-agent") || "";
   const qsAgent = req.nextUrl.searchParams.get("user-agent")?.toLowerCase() ?? null;
 
-  // Prevent loops
-  if (req.nextUrl.pathname.startsWith("/api/ai-proxy")) {
+  // Prevent loops - exclude static assets and Next.js internals
+  if (
+    req.nextUrl.pathname.startsWith("/api/ai-proxy") ||
+    req.nextUrl.pathname.startsWith("/_next/") ||
+    req.nextUrl.pathname.startsWith("/favicon.ico") ||
+    req.nextUrl.pathname.startsWith("/robots.txt") ||
+    req.nextUrl.pathname.startsWith("/sitemap.xml") ||
+    req.nextUrl.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/)
+  ) {
     return NextResponse.next();
   }
 
-  // Log every request
+  // Log every request (only for actual pages)
   console.log(`📝 Request: ${req.method} ${req.nextUrl.pathname} | UA: ${ua.substring(0, 50)}... | Query Agent: ${qsAgent || 'none'}`);
   
   // Log all headers
@@ -66,6 +73,6 @@ export function middleware(req: NextRequest) {
 // Exclude Next internals & static assets
 export const config = {
   matcher: [
-    "/((?!_next/|favicon.ico|robots.txt|sitemap.xml|api/ai-proxy).*)",
+    "/((?!_next/|favicon.ico|robots.txt|sitemap.xml|api/ai-proxy|.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$).*)",
   ],
 };
