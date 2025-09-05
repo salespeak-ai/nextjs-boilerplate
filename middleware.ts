@@ -73,6 +73,6 @@ export function middleware(req: NextRequest) {
 // Exclude Next internals & static assets
 export const config = {
   matcher: [
-    "/((?!_next/|favicon.ico|robots.txt|sitemap.xml|api/ai-proxy|.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$).*)",
+    "/((?!_next/|favicon.ico|robots.txt|sitemap.xml|api/ai-proxy).*)",
   ],
 };
