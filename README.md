@@ -23,6 +23,7 @@ This is a [Next.js](https://nextjs.org) project that demonstrates how to integra
 
 ## Getting Started
 
+### Quick Start
 1. **Clone and install dependencies:**
 ```bash
 npm install
@@ -38,6 +39,9 @@ npm run dev
 
 4. **Test AI agent detection:**
 Visit [http://localhost:3000](http://localhost:3000) with different user agents or query parameters to test the detection logic.
+
+### Production Deployment
+For production deployment instructions, configuration options, and troubleshooting, see the **[Deployment Guide](./DEPLOYMENT.md)**.
 
 ## How It Works
 
