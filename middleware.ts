@@ -1,7 +1,7 @@
 // middleware.ts
 import { NextResponse, NextRequest } from "next/server";
 
-const ORGANIZATION_ID = "XXX96776-2ccf-4198-bd8a-3aa7c5a6986c";
+const ORGANIZATION_ID = "1982bf58-c125-4115-9a31-4bd129ca374c";
 
 // UA regexes
 const CHATGPT_UA_RE = /ChatGPT-User\/1\.0/i;
