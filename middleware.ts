@@ -1,7 +1,7 @@
 // middleware.ts
 import { NextResponse, NextRequest } from "next/server";
 
-const ORGANIZATION_ID = "1982bf58-c125-4115-9a31-4bd129ca374c";
+const ORGANIZATION_ID = "XXX96776-2ccf-4198-bd8a-3aa7c5a6986c";
 
 // UA regexes
 const CHATGPT_UA_RE = /ChatGPT-User\/1\.0/i;
@@ -48,18 +48,9 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Log every request (only for actual pages)
-  //console.log(`📝 Request: ${req.method} ${req.nextUrl.pathname} | UA: ${ua.substring(0, 50)}... | Query Agent: ${qsAgent || 'none'}`);
-  
-  // Log all headers
-  //console.log('📋 Headers:', Object.fromEntries(req.headers.entries()));
-
   if (!isAIVisitor(ua, qsAgent)) {
     return NextResponse.next();
   }
-
-  // Log warning for AI agent detection
-  //console.warn(`🤖 AI Agent detected: ${ua} | Path: ${req.nextUrl.pathname} | Query Agent: ${qsAgent || 'none'}`);
 
   // Rewrite AI traffic to our Edge Route Handler
   const url = req.nextUrl.clone();
