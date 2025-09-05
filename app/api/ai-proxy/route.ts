@@ -4,6 +4,48 @@ export const runtime = "edge";
 const EXTERNAL_API_URL =
   "https://22i9zfydr3.execute-api.us-west-2.amazonaws.com/prod/event_stream";
 
+// UA regexes (same as middleware)
+const CHATGPT_UA_RE = /ChatGPT-User\/1\.0/i;
+const GPTBOT_UA_RE = /GPTBot\/1\.0/i;
+const GOOGLE_EXTENDED_RE = /Google-Extended/i;
+const BING_PREVIEW_RE = /bingpreview/i;
+const PERPLEXITY_UA_RE = /PerplexityBot/i;
+const CLAUDE_USER_RE = /Claude-User/i;
+const CLAUDE_WEB_RE = /Claude-Web/i;
+const CLAUDE_BOT_RE = /ClaudeBot/i;
+
+function getBotType(ua: string, qsAgent?: string | null) {
+  const isChatGPT = CHATGPT_UA_RE.test(ua) || qsAgent === "chatgpt";
+  const isGPTBot = GPTBOT_UA_RE.test(ua);
+  const isGoogleExtended = GOOGLE_EXTENDED_RE.test(ua);
+  const isBingPreview = BING_PREVIEW_RE.test(ua);
+  const isPerplexity = PERPLEXITY_UA_RE.test(ua);
+
+  const isClaudeUser = CLAUDE_USER_RE.test(ua);
+  const isClaudeWeb = CLAUDE_WEB_RE.test(ua);
+  const isClaudeBot = CLAUDE_BOT_RE.test(ua);
+
+  const botType = isChatGPT
+    ? "ChatGPT-User"
+    : isGPTBot
+    ? "GPTBot"
+    : isGoogleExtended
+    ? "Google-Extended"
+    : isBingPreview
+    ? "BingPreview"
+    : isPerplexity
+    ? "PerplexityBot"
+    : isClaudeUser
+    ? "Claude-User"
+    : isClaudeWeb
+    ? "Claude-Web"
+    : isClaudeBot
+    ? "ClaudeBot"
+    : "Unknown";
+
+  return botType;
+}
+
 function escapeRegExp(s: string) {
   return s.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&");
 }
@@ -35,6 +77,7 @@ export async function GET(req: Request) {
   const path = url.searchParams.get("path") || "/";
   const orgId = url.searchParams.get("org") || "";
   const uaHeader = url.searchParams.get("ua") || "";
+  const qsAgent = url.searchParams.get("user-agent")?.toLowerCase() ?? null;
   const requestId = crypto.randomUUID();
 
   const xfProto = req.headers.get("x-forwarded-proto") || "https";
@@ -49,11 +92,14 @@ export async function GET(req: Request) {
 
   const ALT_ORIGIN = `https://salespeak-public-serving.s3.amazonaws.com/${orgId}`;
 
+  // Get the specific bot type
+  const botType = getBotType(uaHeader, qsAgent);
+
   const payload = {
     data: {
       launcher: "proxy",
       url: `${currentOrigin}${path}`,
-      bot_type: "AI-UA",
+      bot_type: botType,
       client_ip: clientIp,
       country,
     },
