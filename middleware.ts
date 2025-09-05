@@ -49,17 +49,17 @@ export function middleware(req: NextRequest) {
   }
 
   // Log every request (only for actual pages)
-  console.log(`📝 Request: ${req.method} ${req.nextUrl.pathname} | UA: ${ua.substring(0, 50)}... | Query Agent: ${qsAgent || 'none'}`);
+  //console.log(`📝 Request: ${req.method} ${req.nextUrl.pathname} | UA: ${ua.substring(0, 50)}... | Query Agent: ${qsAgent || 'none'}`);
   
   // Log all headers
-  console.log('📋 Headers:', Object.fromEntries(req.headers.entries()));
+  //console.log('📋 Headers:', Object.fromEntries(req.headers.entries()));
 
   if (!isAIVisitor(ua, qsAgent)) {
     return NextResponse.next();
   }
 
   // Log warning for AI agent detection
-  console.warn(`🤖 AI Agent detected: ${ua} | Path: ${req.nextUrl.pathname} | Query Agent: ${qsAgent || 'none'}`);
+  //console.warn(`🤖 AI Agent detected: ${ua} | Path: ${req.nextUrl.pathname} | Query Agent: ${qsAgent || 'none'}`);
 
   // Rewrite AI traffic to our Edge Route Handler
   const url = req.nextUrl.clone();
