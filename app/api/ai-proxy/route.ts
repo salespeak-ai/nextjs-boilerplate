@@ -109,35 +109,39 @@ export async function GET(req: Request) {
     campaign_id: "00000000-0000-0000-0000-000000000000",
     organization_id: orgId,
   };
-  fetch(EXTERNAL_API_URL, {
+  // Start logging immediately — runs in parallel with S3 + origin fetches
+  const logPromise = fetch(EXTERNAL_API_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json", "User-Agent": "PostmanRuntime/7.32.2" },
     body: JSON.stringify(payload),
   }).catch(() => {});
 
   try {
-    // 1) Fetch alternate HTML & extract #optimized-for-ai
+    // 1) Fetch S3 alternate + original page in parallel
     const altURL = `${ALT_ORIGIN}${path}`;
-    const altResp = await fetch(altURL, { redirect: "follow" });
+    const origURL = `${currentOrigin}${path}`;
+
+    const [altResp, origResp] = await Promise.all([
+      fetch(altURL, { redirect: "follow" }).catch(() => null),
+      fetch(origURL, {
+        headers: {
+          "user-agent": uaHeader || "",
+          accept: req.headers.get("accept") || "*/*",
+          "x-bypass-middleware": "true", // Bypass middleware to prevent loops
+        },
+        redirect: "follow",
+      }),
+    ]);
+
+    // Extract #optimized-for-ai from S3 response
     let injectedHTML = "";
-    if (altResp.ok) {
+    if (altResp?.ok) {
       const altCT = altResp.headers.get("content-type");
       if (isHTMLResponse(altCT)) {
         const altText = await altResp.text();
         injectedHTML = extractElementOuterHTMLById(altText, "optimized-for-ai") || "";
       }
     }
-
-    // 2) Fetch original page
-    const origURL = `${currentOrigin}${path}`;
-    const origResp = await fetch(origURL, {
-      headers: {
-        "user-agent": uaHeader || "",
-        accept: req.headers.get("accept") || "*/*",
-        "x-bypass-middleware": "true", // Bypass middleware to prevent loops
-      },
-      redirect: "follow",
-    });
 
     const ct = origResp.headers.get("content-type");
     const vary = origResp.headers.get("vary");
@@ -148,6 +152,7 @@ export async function GET(req: Request) {
       headers.set("Vary", vary ? `${vary}, User-Agent` : "User-Agent");
       headers.set("Cache-Control", "private, no-store, max-age=0");
       headers.set("Pragma", "no-cache");
+      await logPromise;
       return new Response(origResp.body, {
         status: origResp.status,
         statusText: origResp.statusText,
@@ -166,20 +171,22 @@ export async function GET(req: Request) {
     headers.set("Cache-Control", "private, no-store, max-age=0");
     headers.set("Pragma", "no-cache");
 
+    await logPromise;
     return new Response(withSnippet, {
       status: origResp.status,
       statusText: origResp.statusText,
       headers,
     });
   } catch (e) {
-    const fallback = await fetch(`${currentOrigin}${path}`, { 
+    const fallback = await fetch(`${currentOrigin}${path}`, {
       headers: {
         "x-bypass-middleware": "true", // Bypass middleware to prevent loops
       },
-      redirect: "follow" 
+      redirect: "follow"
     });
     const headers = new Headers(fallback.headers);
     headers.set("Vary", headers.get("Vary") ? headers.get("Vary") + ", User-Agent" : "User-Agent");
+    await logPromise;
     return new Response(fallback.body, {
       status: fallback.status,
       statusText: fallback.statusText,
