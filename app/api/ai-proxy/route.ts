@@ -125,14 +125,23 @@ export async function GET(req: Request) {
     const origBypassURL = new URL(origURL);
     origBypassURL.searchParams.set("_sp_bypass", "1");
 
+    // Forward cookies/auth from original request for protected deployments
+    // Use a normal UA for the origin fetch — the bot's UA triggers bot protection (401)
+    const cookie = req.headers.get("cookie") || "";
+    const authorization = req.headers.get("authorization") || "";
+
+    const originHeaders: Record<string, string> = {
+      "user-agent": "Mozilla/5.0 (compatible; SalespeakProxy/1.0)",
+      accept: req.headers.get("accept") || "*/*",
+      "x-bypass-middleware": "true",
+    };
+    if (cookie) originHeaders["cookie"] = cookie;
+    if (authorization) originHeaders["authorization"] = authorization;
+
     const [altResp, origResp] = await Promise.all([
       fetch(altURL, { redirect: "follow" }).catch(() => null),
       fetch(origBypassURL.toString(), {
-        headers: {
-          "user-agent": uaHeader || "",
-          accept: req.headers.get("accept") || "*/*",
-          "x-bypass-middleware": "true",
-        },
+        headers: originHeaders,
         redirect: "follow",
       }),
     ]);
@@ -184,10 +193,15 @@ export async function GET(req: Request) {
   } catch (e) {
     const fallbackURL = new URL(`${currentOrigin}${path}`);
     fallbackURL.searchParams.set("_sp_bypass", "1");
+    const fallbackHeaders: Record<string, string> = {
+      "x-bypass-middleware": "true",
+    };
+    const fbCookie = req.headers.get("cookie") || "";
+    const fbAuth = req.headers.get("authorization") || "";
+    if (fbCookie) fallbackHeaders["cookie"] = fbCookie;
+    if (fbAuth) fallbackHeaders["authorization"] = fbAuth;
     const fallback = await fetch(fallbackURL.toString(), {
-      headers: {
-        "x-bypass-middleware": "true",
-      },
+      headers: fallbackHeaders,
       redirect: "follow",
     });
     const headers = new Headers(fallback.headers);
