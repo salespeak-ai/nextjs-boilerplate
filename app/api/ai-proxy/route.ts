@@ -121,13 +121,17 @@ export async function GET(req: Request) {
     const altURL = `${ALT_ORIGIN}${path}`;
     const origURL = `${currentOrigin}${path}`;
 
+    // Append bypass param to origin URL to prevent middleware redirect loops
+    const origBypassURL = new URL(origURL);
+    origBypassURL.searchParams.set("_sp_bypass", "1");
+
     const [altResp, origResp] = await Promise.all([
       fetch(altURL, { redirect: "follow" }).catch(() => null),
-      fetch(origURL, {
+      fetch(origBypassURL.toString(), {
         headers: {
           "user-agent": uaHeader || "",
           accept: req.headers.get("accept") || "*/*",
-          "x-bypass-middleware": "true", // Bypass middleware to prevent loops
+          "x-bypass-middleware": "true",
         },
         redirect: "follow",
       }),
@@ -178,11 +182,13 @@ export async function GET(req: Request) {
       headers,
     });
   } catch (e) {
-    const fallback = await fetch(`${currentOrigin}${path}`, {
+    const fallbackURL = new URL(`${currentOrigin}${path}`);
+    fallbackURL.searchParams.set("_sp_bypass", "1");
+    const fallback = await fetch(fallbackURL.toString(), {
       headers: {
-        "x-bypass-middleware": "true", // Bypass middleware to prevent loops
+        "x-bypass-middleware": "true",
       },
-      redirect: "follow"
+      redirect: "follow",
     });
     const headers = new Headers(fallback.headers);
     headers.set("Vary", headers.get("Vary") ? headers.get("Vary") + ", User-Agent" : "User-Agent");

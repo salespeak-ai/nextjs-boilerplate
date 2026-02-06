@@ -32,7 +32,16 @@ export function middleware(req: NextRequest) {
   const qsAgent = req.nextUrl.searchParams.get("user-agent")?.toLowerCase() ?? null;
 
   // Bypass middleware if requested (to prevent loops from ai-proxy)
-  if (req.headers.get("x-bypass-middleware") === "true") {
+  if (
+    req.headers.get("x-bypass-middleware") === "true" ||
+    req.nextUrl.searchParams.get("_sp_bypass") === "1"
+  ) {
+    // Strip the bypass param so it doesn't leak to the page
+    if (req.nextUrl.searchParams.has("_sp_bypass")) {
+      const clean = req.nextUrl.clone();
+      clean.searchParams.delete("_sp_bypass");
+      return NextResponse.rewrite(clean);
+    }
     return NextResponse.next();
   }
 
